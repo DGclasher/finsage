@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/components/AuthProvider';
@@ -24,16 +24,20 @@ export default function IncomePage() {
   const [loading, setLoading] = useState(false);
   const [deleteDialogId, setDeleteDialogId] = useState<string | null>(null);
 
-  const fetchIncomes = async () => {
+  const fetchIncomes = useCallback(async () => {
+  try {
     const res = await api.get('/api/v1/incomes', {
       headers: { Authorization: `Bearer ${token}` },
     });
     setIncomes(res.data.content || []);
-  };
+  } catch (err) {
+    console.error('Failed to fetch incomes:', err);
+  }
+}, [token]);
 
-  useEffect(() => {
-    fetchIncomes();
-  }, [token]);
+useEffect(() => {
+  fetchIncomes();
+}, [fetchIncomes]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -120,7 +124,8 @@ export default function IncomePage() {
         {incomes.map((income) => (
           <Card key={income.id}>
             <CardContent className="p-4 space-y-2">
-              <p><strong>Amount:</strong> ₹{income.annualPostTaxIncome.toLocaleString()}</p>
+              <strong>Amount:</strong>{' '}
+              ₹{typeof income.annualPostTaxIncome === 'number' ? income.annualPostTaxIncome.toLocaleString() : 'N/A'}
               <p><strong>Year:</strong> {income.incomeYear}</p>
               <div className="flex gap-2 pt-2 text-black">
                 <Button size="sm" onClick={() => handleEdit(income)}>Edit</Button>

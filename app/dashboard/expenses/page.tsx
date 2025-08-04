@@ -1,7 +1,7 @@
 // app/dashboard/expenses/page.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/components/AuthProvider';
@@ -23,20 +23,20 @@ export default function ExpensesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const router = useRouter();
 
-  const fetchExpenses = async () => {
-    try {
-      const res = await api.get('/api/v1/expenses', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setExpenses(res.data.content || []);
-    } catch (err) {
-      console.error('Failed to fetch expenses:', err);
-    }
-  };
+  const fetchExpenses = useCallback(async () => {
+  try {
+    const res = await api.get('/api/v1/expenses', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setExpenses(res.data.content || []);
+  } catch (err) {
+    console.error('Failed to fetch expenses:', err);
+  }
+}, [token]);
 
-  useEffect(() => {
-    fetchExpenses();
-  }, [token]);
+useEffect(() => {
+  fetchExpenses();
+}, [fetchExpenses]);
 
   const deleteExpense = async (id: string) => {
     try {

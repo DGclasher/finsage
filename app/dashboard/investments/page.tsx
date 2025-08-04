@@ -9,10 +9,23 @@ import { Button } from '@/components/ui/button';
 import { Pencil, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
+type Investment = {
+  id: string;
+  type: string;
+  symbol?: string;
+  units?: number;
+  buyPrice?: number;
+  interestRate?: number;
+  startDate?: string;
+  endDate?: string;
+  totalAmountInvested?: number;
+  currentValue?: number;
+};
+
 export default function InvestmentsPage() {
   const { token } = useAuth();
   const router = useRouter();
-  const [investments, setInvestments] = useState<any[]>([]);
+  const [investments, setInvestments] = useState<Investment[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [showDialog, setShowDialog] = useState(false);
@@ -24,8 +37,13 @@ export default function InvestmentsPage() {
           headers: { Authorization: `Bearer ${token}` },
         });
         setInvestments(res.data.content || []);
-      } catch (err: any) {
-        setError(err.response?.data?.message || 'Failed to fetch investments');
+      } catch (err: unknown) {
+        if (typeof err === 'object' && err !== null && 'response' in err) {
+          const errorObj = err as { response?: { data?: { message?: string } } };
+          setError(errorObj.response?.data?.message || 'Failed to fetch investments');
+        } else {
+          setError('Failed to fetch investments');
+        }
       }
     };
     fetchInvestments();
