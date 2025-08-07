@@ -2,8 +2,6 @@
 
 The **Finsage Frontend** is a client-side web application built with **Next.js**, designed to help users track their **incomes**, **expenses**, and **investments**. It communicates with the Finsage Backend API over secure JWT-based authentication and integrates **Google OAuth2** for easy login.
 
-<img src="image.png" alt="alt text" width="700"/>
-
 ---
 
 ## Features

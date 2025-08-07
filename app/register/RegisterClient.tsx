@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import axios from "axios";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import api from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -15,49 +15,85 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Link from "next/link";
-import { Eye, EyeOff, Mail, Lock, ArrowRight, Sparkles } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  User,
+  ArrowRight,
+  Sparkles,
+} from "lucide-react";
 
-export default function LoginClient() {
+export default function RegisterClient() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { login } = useAuth();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    const token = searchParams.get("token");
-    if (token) {
-      login(token);
-      router.push("/dashboard");
-    }
-  }, [searchParams, login, router]);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      setIsLoading(false);
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const response = await api.post("/login", { email, password });
-      const jwt = response.data.token;
-      login(jwt);
-      router.push("/dashboard");
+      const response = await api.post("/register", {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (response.data.token) {
+        login(response.data.token);
+        router.push("/dashboard");
+      } else {
+        setError(
+          "Registration successful! Please check your email to verify your account."
+        );
+      }
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || "Login failed");
+        setError(err.response?.data?.message || "Registration failed");
       } else {
-        setError("Login failed");
+        setError("Registration failed. Please try again.");
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleLogin = () => {
+  const handleGoogleRegister = () => {
     window.location.href = "/api/oauth2/authorization/google";
   };
 
@@ -70,22 +106,60 @@ export default function LoginClient() {
             <Sparkles className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome Back
+            Join FinSage
           </h1>
-          <p className="text-gray-600">Sign in to your FinSage account</p>
+          <p className="text-gray-600">Start your financial journey today</p>
         </div>
 
         <Card className="border-0 shadow-xl bg-white/70 backdrop-blur-sm">
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-semibold text-center">
-              Sign In
+              Create Account
             </CardTitle>
             <CardDescription className="text-center">
-              Enter your credentials to access your account
+              Enter your details to create your account
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Name Fields */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    First Name
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      type="text"
+                      name="firstName"
+                      required
+                      value={formData.firstName}
+                      onChange={handleInputChange}
+                      className="pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
+                      placeholder="John"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    Last Name
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      type="text"
+                      name="lastName"
+                      required
+                      value={formData.lastName}
+                      onChange={handleInputChange}
+                      className="pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
+                      placeholder="Doe"
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Email Field */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">
@@ -95,9 +169,10 @@ export default function LoginClient() {
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
                     type="email"
+                    name="email"
                     required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={formData.email}
+                    onChange={handleInputChange}
                     className="pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
                     placeholder="john@example.com"
                   />
@@ -113,9 +188,10 @@ export default function LoginClient() {
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <Input
                     type={showPassword ? "text" : "password"}
+                    name="password"
                     required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={formData.password}
+                    onChange={handleInputChange}
                     className="pl-10 pr-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
                     placeholder="Enter your password"
                   />
@@ -125,6 +201,36 @@ export default function LoginClient() {
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   >
                     {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirm Password Field */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    required
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    className="pl-10 pr-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
+                    placeholder="Confirm your password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showConfirmPassword ? (
                       <EyeOff className="w-4 h-4" />
                     ) : (
                       <Eye className="w-4 h-4" />
@@ -147,11 +253,11 @@ export default function LoginClient() {
                 {isLoading ? (
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    Signing In...
+                    Creating Account...
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    Sign In
+                    Create Account
                     <ArrowRight className="w-4 h-4" />
                   </div>
                 )}
@@ -170,7 +276,7 @@ export default function LoginClient() {
             </div>
 
             <Button
-              onClick={handleGoogleLogin}
+              onClick={handleGoogleRegister}
               variant="outline"
               className="w-full h-11 border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors"
             >
@@ -196,12 +302,12 @@ export default function LoginClient() {
             </Button>
 
             <div className="text-center text-sm text-gray-600">
-              Don&apos;t have an account?{" "}
+              Already have an account?{" "}
               <Link
-                href="/register"
+                href="/login"
                 className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
               >
-                Sign up
+                Sign in
               </Link>
             </div>
           </CardContent>
