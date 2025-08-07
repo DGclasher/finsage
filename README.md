@@ -18,7 +18,6 @@ The **Finsage Frontend** is a client-side web application built with **Next.js**
 
 ---
 
-
 ## Prerequisites
 
 - Docker

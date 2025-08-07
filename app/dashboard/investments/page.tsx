@@ -87,20 +87,20 @@ export default function InvestmentsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 px-6 py-6">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl">
-              <PieChart className="w-6 h-6 text-white" />
+      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 px-4 sm:px-6 py-4 sm:py-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+            <div className="p-2 sm:p-3 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex-shrink-0">
+              <PieChart className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Investments</h1>
-              <p className="text-gray-600">Manage your investment portfolio</p>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl sm:text-3xl font-bold text-gray-900 truncate">Investments</h1>
+              <p className="text-sm sm:text-base text-gray-600 hidden sm:block">Manage your investment portfolio</p>
             </div>
           </div>
           <Button
             onClick={() => router.push("/dashboard/investments/create")}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
+            className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all duration-200"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Investment
@@ -109,7 +109,7 @@ export default function InvestmentsPage() {
       </div>
 
       {/* Content */}
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
             {error}
