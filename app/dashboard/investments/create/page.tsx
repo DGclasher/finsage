@@ -45,24 +45,92 @@ export default function CreateInvestment() {
 
   const [loading, setLoading] = useState(false);
 
+  // Helper function to determine field requirements based on investment type
+  const getFieldRequirements = (type: string) => {
+    switch (type) {
+      case "STOCK":
+        return {
+          required: ["symbol", "units", "startDate"],
+          disabled: ["buyPrice", "currentPrice", "totalAmountInvested", "currentValue", "interestRate"],
+          optional: ["endDate"]
+        };
+      case "ETF":
+        return {
+          required: ["symbol", "units", "startDate", "interestRate", "buyPrice"],
+          disabled: ["currentPrice", "totalAmountInvested", "currentValue"],
+          optional: ["endDate"]
+        };
+      case "MUTUAL_FUND":
+        return {
+          required: ["symbol", "units", "startDate", "interestRate", "buyPrice"],
+          disabled: ["currentPrice", "totalAmountInvested", "currentValue"],
+          optional: ["endDate"]
+        };
+      case "FD":
+        return {
+          required: ["symbol", "totalAmountInvested", "startDate", "endDate", "interestRate"],
+          disabled: ["units", "buyPrice", "currentPrice", "currentValue"],
+          optional: []
+        };
+      case "BOND":
+        return {
+          required: ["symbol", "units", "buyPrice", "startDate", "endDate", "interestRate"],
+          disabled: ["currentPrice", "totalAmountInvested", "currentValue"],
+          optional: []
+        };
+      default:
+        return {
+          required: [],
+          disabled: [],
+          optional: ["symbol", "units", "buyPrice", "currentPrice", "startDate", "endDate", "interestRate", "totalAmountInvested", "currentValue"]
+        };
+    }
+  };
+
+  const fieldRequirements = getFieldRequirements(form.type);
+
+  const isFieldDisabled = (fieldName: string) => {
+    return fieldRequirements.disabled.includes(fieldName);
+  };
+
+  const isFieldRequired = (fieldName: string) => {
+    return fieldRequirements.required.includes(fieldName);
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields based on investment type
+    const requirements = getFieldRequirements(form.type);
+    const missingFields = requirements.required.filter(field => !form[field as keyof typeof form]);
+    
+    if (missingFields.length > 0) {
+      alert(`Please fill in required fields: ${missingFields.join(', ')}`);
+      return;
+    }
+
     setLoading(true);
     try {
+      // Only send non-disabled fields to the API
+      const formData = { ...form };
+      requirements.disabled.forEach(field => {
+        delete formData[field as keyof typeof formData];
+      });
+
       await api.post(
         "/api/v1/investments",
         {
-          ...form,
-          units: parseFloat(form.units),
-          buyPrice: parseFloat(form.buyPrice),
-          currentPrice: parseFloat(form.currentPrice),
-          interestRate: parseFloat(form.interestRate),
-          totalAmountInvested: parseFloat(form.totalAmountInvested),
-          currentValue: parseFloat(form.currentValue),
+          ...formData,
+          units: formData.units ? parseFloat(formData.units) : undefined,
+          buyPrice: formData.buyPrice ? parseFloat(formData.buyPrice) : undefined,
+          currentPrice: formData.currentPrice ? parseFloat(formData.currentPrice) : undefined,
+          interestRate: formData.interestRate ? parseFloat(formData.interestRate) : undefined,
+          totalAmountInvested: formData.totalAmountInvested ? parseFloat(formData.totalAmountInvested) : undefined,
+          currentValue: formData.currentValue ? parseFloat(formData.currentValue) : undefined,
         },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -140,7 +208,7 @@ export default function CreateInvestment() {
 
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-gray-700">
-                      Symbol/Name
+                      Symbol/Name {isFieldRequired("symbol") && <span className="text-red-500">*</span>}
                     </Label>
                     <div className="relative">
                       <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -148,7 +216,11 @@ export default function CreateInvestment() {
                         name="symbol"
                         value={form.symbol}
                         onChange={handleChange}
-                        className="pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
+                        disabled={isFieldDisabled("symbol")}
+                        required={isFieldRequired("symbol")}
+                        className={`pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 ${
+                          isFieldDisabled("symbol") ? "bg-gray-100 cursor-not-allowed" : ""
+                        }`}
                         placeholder="e.g., AAPL, NIFTY50"
                       />
                     </div>
@@ -159,7 +231,7 @@ export default function CreateInvestment() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-gray-700">
-                      Units/Quantity
+                      Units/Quantity {isFieldRequired("units") && <span className="text-red-500">*</span>}
                     </Label>
                     <div className="relative">
                       <TrendingUp className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -169,7 +241,11 @@ export default function CreateInvestment() {
                         onChange={handleChange}
                         type="number"
                         step="0.001"
-                        className="pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
+                        disabled={isFieldDisabled("units")}
+                        required={isFieldRequired("units")}
+                        className={`pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 ${
+                          isFieldDisabled("units") ? "bg-gray-100 cursor-not-allowed" : ""
+                        }`}
                         placeholder="100"
                       />
                     </div>
@@ -177,7 +253,7 @@ export default function CreateInvestment() {
 
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-gray-700">
-                      Buy Price (₹)
+                      Buy Price (₹) {isFieldRequired("buyPrice") && <span className="text-red-500">*</span>}
                     </Label>
                     <div className="relative">
                       <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -187,7 +263,11 @@ export default function CreateInvestment() {
                         onChange={handleChange}
                         type="number"
                         step="0.01"
-                        className="pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
+                        disabled={isFieldDisabled("buyPrice")}
+                        required={isFieldRequired("buyPrice")}
+                        className={`pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 ${
+                          isFieldDisabled("buyPrice") ? "bg-gray-100 cursor-not-allowed" : ""
+                        }`}
                         placeholder="150.00"
                       />
                     </div>
@@ -195,7 +275,7 @@ export default function CreateInvestment() {
 
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-gray-700">
-                      Current Price (₹)
+                      Current Price (₹) {isFieldRequired("currentPrice") && <span className="text-red-500">*</span>}
                     </Label>
                     <div className="relative">
                       <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -205,7 +285,11 @@ export default function CreateInvestment() {
                         onChange={handleChange}
                         type="number"
                         step="0.01"
-                        className="pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
+                        disabled={isFieldDisabled("currentPrice")}
+                        required={isFieldRequired("currentPrice")}
+                        className={`pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 ${
+                          isFieldDisabled("currentPrice") ? "bg-gray-100 cursor-not-allowed" : ""
+                        }`}
                         placeholder="175.00"
                       />
                     </div>
@@ -216,7 +300,7 @@ export default function CreateInvestment() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-gray-700">
-                      Total Amount Invested (₹)
+                      Total Amount Invested (₹) {isFieldRequired("totalAmountInvested") && <span className="text-red-500">*</span>}
                     </Label>
                     <div className="relative">
                       <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -226,7 +310,11 @@ export default function CreateInvestment() {
                         onChange={handleChange}
                         type="number"
                         step="0.01"
-                        className="pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
+                        disabled={isFieldDisabled("totalAmountInvested")}
+                        required={isFieldRequired("totalAmountInvested")}
+                        className={`pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 ${
+                          isFieldDisabled("totalAmountInvested") ? "bg-gray-100 cursor-not-allowed" : ""
+                        }`}
                         placeholder="15000.00"
                       />
                     </div>
@@ -234,7 +322,7 @@ export default function CreateInvestment() {
 
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-gray-700">
-                      Current Value (₹)
+                      Current Value (₹) {isFieldRequired("currentValue") && <span className="text-red-500">*</span>}
                     </Label>
                     <div className="relative">
                       <TrendingUp className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -244,7 +332,11 @@ export default function CreateInvestment() {
                         onChange={handleChange}
                         type="number"
                         step="0.01"
-                        className="pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
+                        disabled={isFieldDisabled("currentValue")}
+                        required={isFieldRequired("currentValue")}
+                        className={`pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 ${
+                          isFieldDisabled("currentValue") ? "bg-gray-100 cursor-not-allowed" : ""
+                        }`}
                         placeholder="17500.00"
                       />
                     </div>
@@ -255,7 +347,7 @@ export default function CreateInvestment() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-gray-700">
-                      Start Date
+                      Start Date {isFieldRequired("startDate") && <span className="text-red-500">*</span>}
                     </Label>
                     <div className="relative">
                       <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -264,14 +356,18 @@ export default function CreateInvestment() {
                         name="startDate"
                         value={form.startDate}
                         onChange={handleChange}
-                        className="pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
+                        disabled={isFieldDisabled("startDate")}
+                        required={isFieldRequired("startDate")}
+                        className={`pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 ${
+                          isFieldDisabled("startDate") ? "bg-gray-100 cursor-not-allowed" : ""
+                        }`}
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-gray-700">
-                      End Date (Optional)
+                      End Date {isFieldRequired("endDate") ? <span className="text-red-500">*</span> : "(Optional)"}
                     </Label>
                     <div className="relative">
                       <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -280,14 +376,18 @@ export default function CreateInvestment() {
                         name="endDate"
                         value={form.endDate}
                         onChange={handleChange}
-                        className="pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
+                        disabled={isFieldDisabled("endDate")}
+                        required={isFieldRequired("endDate")}
+                        className={`pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 ${
+                          isFieldDisabled("endDate") ? "bg-gray-100 cursor-not-allowed" : ""
+                        }`}
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <Label className="text-sm font-medium text-gray-700">
-                      Interest Rate (%)
+                      Interest Rate (%) {isFieldRequired("interestRate") && <span className="text-red-500">*</span>}
                     </Label>
                     <div className="relative">
                       <TrendingUp className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -297,7 +397,11 @@ export default function CreateInvestment() {
                         onChange={handleChange}
                         type="number"
                         step="0.01"
-                        className="pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20"
+                        disabled={isFieldDisabled("interestRate")}
+                        required={isFieldRequired("interestRate")}
+                        className={`pl-10 border-gray-200 focus:border-blue-500 focus:ring-blue-500/20 ${
+                          isFieldDisabled("interestRate") ? "bg-gray-100 cursor-not-allowed" : ""
+                        }`}
                         placeholder="8.5"
                       />
                     </div>
